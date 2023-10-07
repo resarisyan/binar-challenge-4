@@ -9,7 +9,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
-import javax.transaction.Transactional;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -49,11 +48,13 @@ public class ProductServiceImpl implements ProductService{
                 .orElse(false);
     }
     @Override
-    @Transactional
     public Boolean deleteProduct(String productName) {
         return Optional.ofNullable(productName)
-                .map(productRepository::deleteByProductName)
-                .map(Objects::nonNull)
+                .map(productRepository::findByProductName)
+                .map(existingProduct -> {
+                    productRepository.delete(existingProduct);
+                    return true;
+                })
                 .orElse(false);
     }
     @Override

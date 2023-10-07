@@ -10,8 +10,9 @@ import com.binaracademy.binarfud.response.ProductResponse;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.stereotype.Component;
-import org.springframework.stereotype.Service;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 
 @SpringBootTest
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
@@ -26,21 +27,34 @@ public class ProductServiceImplTest {
     @Autowired
     private MerchantRepository merchantRepository;
 
-    @BeforeAll
+    @BeforeEach
     public void setUp() {
-        System.out.println("Before each");
-        Merchant merchant = new Merchant();
-        merchant.setMerchantName("SampleMerchant");
-        merchant.setMerchantLocation("SampleLocation");
-        merchant.setOpen(true);
+        Merchant merchant = Merchant.builder()
+                .merchantName("SampleMerchant")
+                .merchantLocation("SampleLocation")
+                .open(true)
+                .build();
         merchantRepository.save(merchant);
+        Product product = Product.builder().
+                productName("SampleProduct").
+                price(100.0).
+                merchant(merchant).
+                build();
+        productRepository.save(product);
     }
+
+    @AfterEach
+    public void tearDown() {
+        productRepository.deleteAll();
+        merchantRepository.deleteAll();
+    }
+
 
     @Test
     public void testAddNewProduct() {
         Merchant merchant = merchantRepository.findByMerchantName("SampleMerchant");
         Product product = Product.builder().
-                productName("SampleProduct").
+                productName("CreateProduct").
                 price(100.0).
                 merchant(merchant).
                 build();
@@ -51,8 +65,9 @@ public class ProductServiceImplTest {
     @Test
     public void testUpdateProduct() {
         Merchant merchant = merchantRepository.findByMerchantName("SampleMerchant");
+
         Product product = Product.builder().
-                productName("SampleProduct").
+                productName("SampleProductUpdate").
                 price(200.0).
                 merchant(merchant).
                 build();
@@ -66,20 +81,23 @@ public class ProductServiceImplTest {
         assertTrue(result);
     }
 
-//    @Test
-//    public void testGetProductDetail() {
-//        Product product = new Product();
-//        product.setProductName("SampleProduct");
-//        product.setPrice(100.0);
-//        Merchant merchant = merchantRepository.findByMerchantName("SampleMerchant");
-//        product.setMerchant(merchant);
-//        productRepository.save(product);
-//
-//        ProductResponse response = productService.getProductDetail("SampleProduct");
-//
-//        assertNotNull(response);
-//        assertEquals("SampleProduct", response.getProductName());
-//        assertEquals(merchant, response.getMerchant());
-//        assertEquals(100.0, response.getPrice());
-//    }
+    @Test
+    public void testGetProductDetail() {
+        Merchant merchant = merchantRepository.findByMerchantName("SampleMerchant");
+        ProductResponse response = productService.getProductDetail("SampleProduct");
+        assertNotNull(response);
+        assertEquals("SampleProduct", response.getProductName());
+        assertEquals(merchant.getMerchantCode(), response.getMerchant().getMerchantCode());
+        assertEquals(100.0, response.getPrice());
+    }
+
+    @Test
+    public void testGetProductsWithPagination(){
+        Pageable pageable = PageRequest.of(0, 10);
+        Page<Product> products = productService.getProductsWithPagination(pageable);
+        assertNotNull(products);
+        assertEquals(1, products.getTotalElements());
+        assertEquals(1, products.getTotalPages());
+        assertEquals("SampleProduct", products.getContent().get(0).getProductName());
+    }
 }
