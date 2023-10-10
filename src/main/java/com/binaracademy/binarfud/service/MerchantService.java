@@ -8,6 +8,6 @@ import org.springframework.stereotype.Service;
 @Service
 public interface MerchantService {
     Boolean addNewMerchant(Merchant merchant);
-    Boolean updateStatusMerchant(String merchantName, Merchant merchant);
+    Boolean updateStatusMerchant(String merchantName);
     Page<Merchant> getAllOpenMerchant(Boolean open, Pageable pageable);
 }

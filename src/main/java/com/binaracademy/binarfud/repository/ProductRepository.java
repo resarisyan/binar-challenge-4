@@ -9,7 +9,6 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface ProductRepository extends JpaRepository<Product, String>{
     Product findByProductName(String productName);
-    Product deleteByProductName(String productName);
-
+//    Product deleteByProductName(String productName);
     Page<Product> findAll(Pageable pageable);
 }

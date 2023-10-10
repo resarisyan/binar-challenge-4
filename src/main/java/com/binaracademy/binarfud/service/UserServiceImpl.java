@@ -40,19 +40,27 @@ public class UserServiceImpl implements UserService {
                             .email(user.getEmail())
                             .password(user.getPassword())
                             .build();
-                    return userRepository.save(user1);
+                    log.info("User {} successfully updated", user1.getUsername());
+                    userRepository.save(user1);
+                    return true;
                 })
-                .map(Objects::nonNull)
-                .orElse(false);
+                .orElseGet(() -> {
+                    log.error("Failed to update User");
+                    return false;
+                });
     }
 
     public Boolean deleteUser(String username) {
         return Optional.ofNullable(username)
                 .map(userRepository::findByUsername)
                    .map(user -> {
+                        log.info("User {} successfully deleted", user.getUsername());
                         userRepository.delete(user);
                         return true;
                     })
-                .orElse(false);
+                .orElseGet(() -> {
+                    log.error("Failed to delete User");
+                    return false;
+                });
     }
 }

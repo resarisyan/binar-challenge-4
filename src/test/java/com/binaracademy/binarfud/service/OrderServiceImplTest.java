@@ -2,30 +2,29 @@ package com.binaracademy.binarfud.service;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-import com.binaracademy.binarfud.model.Cart;
-import com.binaracademy.binarfud.model.Merchant;
-import com.binaracademy.binarfud.model.Product;
-import com.binaracademy.binarfud.model.User;
-import com.binaracademy.binarfud.repository.CartRepository;
-import com.binaracademy.binarfud.repository.MerchantRepository;
-import com.binaracademy.binarfud.repository.ProductRepository;
-import com.binaracademy.binarfud.repository.UserRepository;
+import com.binaracademy.binarfud.model.*;
+import com.binaracademy.binarfud.repository.*;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 
 @SpringBootTest
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-public class CartServiceImplTest {
+public class OrderServiceImplTest {
+    @Autowired
+    private OrderServiceImpl orderService;
 
     @Autowired
-    private CartRepository cartRepository;
+    private OrderRepository orderRepository;
 
     @Autowired
-    private CartServiceImpl cartService;
+    private OrderDetailRepository orderDetailRepository;
 
     @Autowired
     private UserRepository userRepository;
@@ -35,6 +34,9 @@ public class CartServiceImplTest {
 
     @Autowired
     private MerchantRepository merchantRepository;
+
+    @Autowired
+    private CartRepository cartRepository;
 
     @BeforeEach
     public void setUp() {
@@ -58,10 +60,20 @@ public class CartServiceImplTest {
                 merchant(merchant).
                 build();
         productRepository.save(product);
+
+        Cart cart = Cart.builder()
+                .user(user)
+                .product(product)
+                .quantity(1)
+                .totalPrice(product.getPrice() * 1)
+                .build();
+        cartRepository.save(cart);
     }
 
     @AfterEach
     public void tearDown() {
+        orderDetailRepository.deleteAll();
+        orderRepository.deleteAll();
         cartRepository.deleteAll();
         productRepository.deleteAll();
         merchantRepository.deleteAll();
@@ -69,24 +81,31 @@ public class CartServiceImplTest {
     }
 
     @Test
-    public void testAddNewCart() {
-        Product product = productRepository.findByProductName("SampleProduct");
+    public void testAddNewOrder() {
         User user = userRepository.findByUsername("SampleUser");
-        Cart cart = Cart.builder().product(product).quantity(1).user(user).build();
-        boolean result = cartService.addNewCart(cart);
+        Order order = Order.builder()
+                .user(user)
+                .destinationAddress("SampleAddress")
+                .note("SampleNote")
+                .build();
+        boolean result = orderService.addNewOrder(order);
         assertTrue(result);
     }
 
     @Test
-    public void testExitingProductCart() {
-        Product product = productRepository.findByProductName("SampleProduct");
+    public void testGetAllOrderWithPagination() {
         User user = userRepository.findByUsername("SampleUser");
-        Cart cart = Cart.builder().product(product).quantity(1).user(user).build();
-        cartService.addNewCart(cart);
-        boolean result = cartService.addNewCart(cart);
-        int expected = 2;
-        assertTrue(result);
-        assertEquals(expected, cartRepository.findByProductAndUser(product, user).getQuantity());
+        Order order = Order.builder()
+                .user(user)
+                .destinationAddress("SampleAddress")
+                .note("SampleNote")
+                .build();
+        orderService.addNewOrder(order);
+        Pageable pageable = PageRequest.of(0, 10);
+        Page<Order> orderPagination = orderService.getAllOrderWithPagination(pageable);
+        assertNotNull(orderPagination);
+        assertEquals(1, orderPagination.getTotalElements());
+        assertEquals(1, orderPagination.getTotalPages());
+        assertEquals("SampleAddress", orderPagination.getContent().get(0).getDestinationAddress());
     }
 }
-

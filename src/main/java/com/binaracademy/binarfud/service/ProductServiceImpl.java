@@ -43,9 +43,13 @@ public class ProductServiceImpl implements ProductService{
                     existingProduct.setMerchant(product.getMerchant());
                     existingProduct.setPrice(product.getPrice());
                     productRepository.save(existingProduct);
+                    log.info("Product {} successfully updated", existingProduct.getProductName());
                     return true;
                 })
-                .orElse(false);
+                .orElseGet(() -> {
+                    log.error("Failed to update product");
+                    return false;
+                });
     }
     @Override
     public Boolean deleteProduct(String productName) {
@@ -53,9 +57,13 @@ public class ProductServiceImpl implements ProductService{
                 .map(productRepository::findByProductName)
                 .map(existingProduct -> {
                     productRepository.delete(existingProduct);
+                    log.info("Product {} successfully deleted", existingProduct.getProductName());
                     return true;
                 })
-                .orElse(false);
+                .orElseGet(() -> {
+                    log.error("Failed to delete product");
+                    return false;
+                });
     }
     @Override
     public ProductResponse getProductDetail(String selectedProductName) {

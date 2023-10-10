@@ -7,7 +7,6 @@ import org.springframework.stereotype.Service;
 
 @Service
 public interface OrderService {
-//    Boolean addNewOrder();
-//    Page<Order> getAllOrder(Pageable pageable);
-
+    Boolean addNewOrder(Order order);
+    Page<Order> getAllOrderWithPagination(Pageable pageable);
 }

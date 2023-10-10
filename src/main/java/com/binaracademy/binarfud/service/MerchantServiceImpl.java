@@ -33,15 +33,19 @@ public class MerchantServiceImpl implements MerchantService{
                 });
     }
 
-    public Boolean updateStatusMerchant(String merchantName, Merchant merchant) {
+    public Boolean updateStatusMerchant(String merchantName) {
         return Optional.ofNullable(merchantName)
                 .map(merchantRepository::findByMerchantName)
                 .map(merchant1 -> {
-                    merchant1.setOpen(merchant.getOpen());
+                    merchant1.setOpen(merchant1.getOpen() ? false : true);
+                    log.info("Merchant {} successfully updated", merchant1.getMerchantName());
                     return merchantRepository.save(merchant1);
                 })
                 .map(Objects::nonNull)
-                .orElse(false);
+                .orElseGet(() -> {
+                    log.error("Failed to update merchant");
+                    return false;
+                });
     }
 
     public Page<Merchant> getAllOpenMerchant(Boolean open, Pageable pageable) {

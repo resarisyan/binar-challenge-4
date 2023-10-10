@@ -7,6 +7,8 @@ import com.binaracademy.binarfud.repository.OrderDetailRepository;
 import com.binaracademy.binarfud.repository.OrderRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.util.Date;
@@ -25,23 +27,16 @@ public class OrderServiceImpl implements OrderService {
     @Autowired
     private OrderDetailRepository orderDetailRepository;
 
+    @Override
     public Boolean addNewOrder(Order order) {
         return Optional.ofNullable(order)
                 .map(user -> cartRepository.findByUser(order.getUser()))
                 .map(carts -> {
-                    Order newOrder = new Order();
-                    newOrder.builder()
-                            .destinationAddress(order.getDestinationAddress())
-                            .completed(false)
-                            .orderTime(new Date())
-                            .user(order.getUser())
-                            .note(order.getNote())
-                            .build();
-                    orderRepository.save(newOrder);
-
+                    order.setCompleted(false);
+                    order.setOrderTime(new Date());
+                    Order newOrder = orderRepository.save(order);
                     carts.forEach(cart -> {
-                        OrderDetail orderDetail = new OrderDetail();
-                        orderDetail.builder()
+                        OrderDetail orderDetail = OrderDetail.builder()
                                 .order(newOrder)
                                 .product(cart.getProduct())
                                 .quantity(cart.getQuantity())
@@ -49,8 +44,16 @@ public class OrderServiceImpl implements OrderService {
                                 .build();
                         orderDetailRepository.save(orderDetail);
                     });
+                    cartRepository.deleteAll(carts);
+                    log.info("Order {} successfully added", order.getId());
                     return true;
                 })
                 .orElse(false);
     }
+
+    @Override
+    public Page<Order> getAllOrderWithPagination(Pageable pageable) {
+        return orderRepository.findAll(pageable);
+    }
+
 }
